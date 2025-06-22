@@ -35,15 +35,68 @@ public class Lexer implements Iterator<Token> {
         return (c >= '0' && c <= '9');
     }
 
+    public char previous() {
+        return text.charAt(current - 1);
+    }
+
+    public boolean checkKeyword(String remaining, String next, int rLength) {
+        return (remaining.length() == next.length() && remaining.equals(next));
+    }
+
     public Token identifier() {
         int start = current - 1;
+
+        char c = previous();
+        int  rLength = 0;
+        String remaining = "";
+        TokenType type = TokenType.IDENTIFIER;
+        switch (c) {
+            case 'a': rLength = 2; remaining = "nd"; type = TokenType.AND;break;
+            case 'c': rLength = 4; remaining = "lass"; type = TokenType.CLASS; break;
+            case 'e': rLength = 3; remaining = "lse"; type = TokenType.ELSE; break;
+            case 'f': {
+                char next = advance();
+                switch (next) {
+                    case 'a': rLength = 3; remaining = "lse"; type = TokenType.ELSE; break;
+                    case 'o': rLength = 1; remaining = "r"; type = TokenType.FOR; break;
+                    case 'u': rLength = 1; remaining = "n"; type = TokenType.FUN; break;
+                    default: break;
+                }
+            } break;
+            case 'i': rLength = 1; remaining = "f"; type = TokenType.IF; break;
+            case 'n': rLength = 2; remaining = "il"; type = TokenType.NIL; break;
+            case 'o': rLength = 1; remaining = "r"; type = TokenType.OR; break;
+            case 'p': rLength = 4; remaining = "rint"; type = TokenType.PRINT; break;
+            case 'r': rLength = 5; remaining = "eturn"; type = TokenType.RETURN; break;
+            case 't': {
+                char next = advance();
+                switch (next) {
+                    case 'h': rLength = 2; remaining = "is"; type = TokenType.THIS; break;
+                    case 'r': rLength = 2; remaining = "ue"; type = TokenType.TRUE; break;
+                    default: break;
+                }
+            } break;
+            case 's': rLength = 4; remaining = "uper"; type = TokenType.SUPER; break;
+            case 'v': rLength = 2; remaining = "ar"; type = TokenType.VAR; break;
+            case 'w': rLength = 4; remaining = "hile"; type = TokenType.WHILE; break;
+        }
+
+        if (!remaining.isEmpty()  && !isAtEnd()) {
+            String next = text.substring(current, current + rLength);
+            if (checkKeyword(remaining, next, rLength)) {
+                for (int i=0; i<rLength; i++) {
+                    advance();
+                }
+                return new Token(type, "", line);
+            }
+        }
+
         while (!isAtEnd() && (isAlpha(text.charAt(current)) || isDigit(text.charAt(current)))) {
             advance();
         }
 
-        advance();
         String name = text.substring(start, current);
-        return new Token(TokenType.TOKEN_IDENTIFIER, name, line);
+        return new Token(TokenType.IDENTIFIER, name, line);
     }
 
     public Token number() {
@@ -60,7 +113,7 @@ public class Lexer implements Iterator<Token> {
 
         advance();
         String value = text.substring(start, current);
-        return new Token(TokenType.TOKEN_NUMBER, value, line);
+        return new Token(TokenType.NUMBER, value, line);
     }
 
     public Token string() {
@@ -75,7 +128,7 @@ public class Lexer implements Iterator<Token> {
 
         advance();
         String value = text.substring(start, current);
-        return new Token(TokenType.TOKEN_STRING, value, line);
+        return new Token(TokenType.STRING, value, line);
     }
 
     public boolean match (char c) {
@@ -122,39 +175,39 @@ public class Lexer implements Iterator<Token> {
         if (isAlpha(c)) { return identifier(); }
         if (isDigit(c)) { return number(); }
 
-        TokenType type = TokenType.TOKEN_ERROR;
+        TokenType type = TokenType.ERROR;
         String lexeme = "";
         switch (c) {
-            case '(': type = TokenType.TOKEN_LEFT_PAREN; break;
-            case ')': type = TokenType.TOKEN_RIGHT_PAREN; break;
-            case '[': type = TokenType.TOKEN_LEFT_BRACE; break;
-            case ']': type = TokenType.TOKEN_RIGHT_BRACE; break;
-            case ',': type = TokenType.TOKEN_COMMA; break;
-            case '.': type = TokenType.TOKEN_DOT; break;
-            case '-': type = TokenType.TOKEN_MINUS; break;
-            case '+': type = TokenType.TOKEN_PLUS; break;
-            case ';': type = TokenType.TOKEN_SEMICOLON; break;
-            case '/': type = TokenType.TOKEN_SLASH; break;
-            case '*': type = TokenType.TOKEN_STAR; break;
+            case '(': type = TokenType.LEFT_PAREN; break;
+            case ')': type = TokenType.RIGHT_PAREN; break;
+            case '{': type = TokenType.LEFT_BRACE; break;
+            case '}': type = TokenType.RIGHT_BRACE; break;
+            case ',': type = TokenType.COMMA; break;
+            case '.': type = TokenType.DOT; break;
+            case '-': type = TokenType.MINUS; break;
+            case '+': type = TokenType.PLUS; break;
+            case ';': type = TokenType.SEMICOLON; break;
+            case '/': type = TokenType.SLASH; break;
+            case '*': type = TokenType.STAR; break;
 
             case '!': {
-                if (match('=')) { type = TokenType.TOKEN_BANG_EQUAL; }
-                else { type = TokenType.TOKEN_BANG; }
+                if (match('=')) { type = TokenType.BANG_EQUAL; }
+                else { type = TokenType.BANG; }
             } break;
 
             case '=': {
-                if (match('=')) { type = TokenType.TOKEN_EQUAL_EQUAL; }
-                else { type = TokenType.TOKEN_EQUAL; }
+                if (match('=')) { type = TokenType.EQUAL_EQUAL; }
+                else { type = TokenType.EQUAL; }
             } break;
 
             case '>': {
-                if (match('=')) { type = TokenType.TOKEN_GREATER_EQUAL; }
-                else { type = TokenType.TOKEN_GREATER; }
+                if (match('=')) { type = TokenType.GREATER_EQUAL; }
+                else { type = TokenType.GREATER; }
             } break;
 
             case '<': {
-                if (match('=')) { type = TokenType.TOKEN_LESS_EQUAL; }
-                else { type = TokenType.TOKEN_LESS; }
+                if (match('=')) { type = TokenType.LESS_EQUAL; }
+                else { type = TokenType.LESS; }
             } break;
 
             case '"': {
